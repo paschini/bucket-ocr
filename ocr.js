@@ -2,55 +2,16 @@
 // set GOOGLE_APPLICATION_CREDENTIALS=[PATH]
 // [path] to json key file obtained from google cloud service account
 
-async function detectTextGCS() {
-  // [START vision_text_detection_gcs]
-  // Imports the Google Cloud client libraries
-  const vision = require('@google-cloud/vision');
+const path = require('path');
+const vision = require('@google-cloud/vision');
+const { Storage } = require('@google-cloud/storage');
+const { loadImage, createCanvas } = require('canvas');
 
-  // Creates a client
+async function getVertices(data) {
   const client = new vision.ImageAnnotatorClient();
-
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-     const bucketName = 'elliestestbucket';
-     const fileName = 'testcc.jpg';
-
-    // Performs text detection on the gcs file
-  const [result] = await client.textDetection(`gs://${bucketName}/${fileName}`);
-  const detections = result.textAnnotations;
-
-  // index 3 4 5 and 6 would be 4 blocks consisting of the cc number
-  // console.log(detections[3].description, detections[3].boundingPoly.vertices);
-  // return detections[3].boundingPoly.vertices;
-
-  console.log('Text:');
-  detections.forEach(text => console.log(text));
-  // [END vision_text_detection_gcs]
-}
-
-async function getDetectedText(groupIndex) {
-  const vision = require('@google-cloud/vision');
-  const client = new vision.ImageAnnotatorClient();
-
-  const bucketName = 'elliestestbucket';
-  const fileName = 'testcc.jpg';
 
   // Performs text detection on the gcs file
-  const [result] = await client.textDetection(`gs://${bucketName}/${fileName}`);
-  const detections = result.textAnnotations;
-  console.log(detections[groupIndex].description, detections[groupIndex].boundingPoly.vertices);
-}
-
-async function getVertices() {
-  const vision = require('@google-cloud/vision');
-  const client = new vision.ImageAnnotatorClient();
-
-  const bucketName = 'elliestestbucket';
-  const fileName = 'testcc.jpg';
-
-  // Performs text detection on the gcs file
-  const [result] = await client.textDetection(`gs://${bucketName}/${fileName}`);
+  const [result] = await client.textDetection(`gs://${data.bucket}/${data.name}`);
   const detections = result.textAnnotations;
   // return detections[groupIndex].boundingPoly.vertices;
   return detections.filter(group => group.description.match(new RegExp('([0-9]{4})'))).map(groupVertices => ({
@@ -59,18 +20,12 @@ async function getVertices() {
   }), []);
 }
 
-async function getImage() {
-  const path = require('path');
-  const { Storage } = require('@google-cloud/storage');
+async function getImage(data) {
   const storage = new Storage();
-  const { loadImage } = require('canvas');
-
-  const bucketName = 'elliestestbucket';
-  const fileName = 'testcc.jpg';
 
 // Download file from bucket.
-  const tempLocalPath = `${__dirname}/tmp/${path.parse(fileName).base}`;
-  const file = storage.bucket(bucketName).file(fileName);
+  const tempLocalPath = `${__dirname}/tmp/${path.parse(data.name).base}`;
+  const file = storage.bucket(data.bucket).file(data.name);
   try {
     await file.download({destination: tempLocalPath});
   } catch (err) {
@@ -80,10 +35,17 @@ async function getImage() {
   return await loadImage(tempLocalPath);
 }
 
-async function drawMask() {
-  const { createCanvas } = require('canvas');
-  const image = await getImage();
-  const numberGroupsVertices = await getVertices();
+async function uploadImage(data) {
+  const storage = new Storage();
+  const fileName = `${__dirname}/tmp/${data.name}`;
+
+// Upload file to bucket.
+  await storage.bucket(data.bucket).upload(fileName, {destination: `result_${data.name}`});
+}
+
+async function drawMask(data) {
+  const image = await getImage(data);
+  const numberGroupsVertices = await getVertices(data);
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext('2d');
 
@@ -103,12 +65,18 @@ async function drawMask() {
   // );
 
   const fs = require('fs');
-  const out = fs.createWriteStream(`${__dirname}/tmp/result.jpg`);
+  const out = fs.createWriteStream(`${__dirname}/tmp/${data.name}`);
   const stream = canvas.createJPEGStream();
   stream.pipe(out);
   await out.on('finish', () => console.log('masked file saved.'));
 
-  // TODO: uplaod file back to bucket
+  await uploadImage(data);
 }
 
-drawMask().then(() => console.log('finished'));
+// drawMask().then(() => console.log('finished'));
+
+exports.maskImage = async function(event) {
+  await drawMask(event.data);
+};
+
+// how to deploy: https://www.youtube.com/watch?v=rzHm2wu9_LM
