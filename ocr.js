@@ -42,7 +42,7 @@ async function getDetectedText(groupIndex) {
   console.log(detections[groupIndex].description, detections[groupIndex].boundingPoly.vertices);
 }
 
-async function getBoundingRect(groupIndex) {
+async function getVertices() {
   const vision = require('@google-cloud/vision');
   const client = new vision.ImageAnnotatorClient();
 
@@ -52,15 +52,18 @@ async function getBoundingRect(groupIndex) {
   // Performs text detection on the gcs file
   const [result] = await client.textDetection(`gs://${bucketName}/${fileName}`);
   const detections = result.textAnnotations;
-  return detections[groupIndex].boundingPoly.vertices;
+  // return detections[groupIndex].boundingPoly.vertices;
+  return detections.filter(group => group.description.match(new RegExp('([0-9]{4})'))).map(groupVertices => ({
+    description: groupVertices.description,
+    vertices: groupVertices.boundingPoly.vertices
+  }), []);
 }
 
 async function getImage() {
   const path = require('path');
-  const {Storage} = require('@google-cloud/storage');
+  const { Storage } = require('@google-cloud/storage');
   const storage = new Storage();
   const { loadImage } = require('canvas');
-  // const vertices = detectTextGCS();
 
   const bucketName = 'elliestestbucket';
   const fileName = 'testcc.jpg';
@@ -78,25 +81,34 @@ async function getImage() {
 }
 
 async function drawMask() {
-  const { createCanvas, Image } = require('canvas');
-  const result = await getImage();
-  // groupIndex 3, 4 , 5, 6 are the card's number groups
-  const verticesN1 = await getBoundingRect(3);
-  const verticesN4 = await getBoundingRect(6);
-  const verticesDate = await getBoundingRect(10);
-
-  const canvas = createCanvas(result.width, result.height);
+  const { createCanvas } = require('canvas');
+  const image = await getImage();
+  const numberGroupsVertices = await getVertices();
+  const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext('2d');
 
-  ctx.drawImage(result, 0, 0);
+  ctx.drawImage(image, 0, 0);
   ctx.fillStyle = "#000000";
-  ctx.fillRect(verticesN1[0].x, verticesN1[0].y, verticesN4[2].x, verticesDate[0].y - verticesN1[0].y);
+  ctx.fillRect(
+    numberGroupsVertices[1].vertices[0].x, numberGroupsVertices[1].vertices[0].y,
+    numberGroupsVertices[3].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
+    numberGroupsVertices[4].vertices[2].y - numberGroupsVertices[1].vertices[0].y
+  );
+
+  // to mask all of the numbers:
+  // ctx.fillRect(
+  //   numberGroupsVertices[1].vertices[0].x, numberGroupsVertices[1].vertices[0].y,
+  //   numberGroupsVertices[4].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
+  //   numberGroupsVertices[4].vertices[2].y - numberGroupsVertices[1].vertices[0].y
+  // );
 
   const fs = require('fs');
-  const out = fs.createWriteStream(`${__dirname}/result.jpg`);
+  const out = fs.createWriteStream(`${__dirname}/tmp/result.jpg`);
   const stream = canvas.createJPEGStream();
   stream.pipe(out);
   await out.on('finish', () => console.log('masked file saved.'));
+
+  // TODO: uplaod file back to bucket
 }
 
-drawMask();
+drawMask().then(() => console.log('finished'));
