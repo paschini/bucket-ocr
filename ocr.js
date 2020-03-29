@@ -40,7 +40,16 @@ async function uploadImage(data) {
   const fileName = `${__dirname}/tmp/${data.name}`;
 
 // Upload file to bucket.
-  await storage.bucket(data.bucket).upload(fileName, {destination: `result_${data.name}`});
+  await storage.bucket(data.bucket).upload(fileName, {destination: `masked_${data.name}`});
+}
+
+async function deleteUnmasked(data) {
+  const storage = new Storage();
+  const originalFile = storage.bucket(data.bucket).file(data.name);
+  const tempFile = `${__dirname}/tmp/${path.parse(data.name).base}`;
+
+  await storage.delete(originalFile);
+  await storage.delete(tempFile);
 }
 
 async function drawMask(data) {
@@ -73,10 +82,9 @@ async function drawMask(data) {
   await uploadImage(data);
 }
 
-// drawMask().then(() => console.log('finished'));
-
 exports.maskImage = async function(event) {
   await drawMask(event.data);
+  await deleteUnmasked(event.data);
 };
 
 // how to deploy: https://www.youtube.com/watch?v=rzHm2wu9_LM
