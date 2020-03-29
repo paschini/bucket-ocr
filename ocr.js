@@ -15,7 +15,6 @@ async function getVertices(data) {
   const detections = result.textAnnotations;
   // return detections[groupIndex].boundingPoly.vertices;
   return detections.filter(group => group.description.match(new RegExp('([0-9]{4})'))).map(groupVertices => ({
-    description: groupVertices.description,
     vertices: groupVertices.boundingPoly.vertices
   }), []);
 }
@@ -60,7 +59,7 @@ async function drawMask(data) {
 
   ctx.drawImage(image, 0, 0);
   ctx.fillStyle = "#000000";
-  ctx.fillRect(
+  ctx.fillRect( // masks all but the last 4 digits
     numberGroupsVertices[1].vertices[0].x, numberGroupsVertices[1].vertices[0].y,
     numberGroupsVertices[3].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
     numberGroupsVertices[4].vertices[2].y - numberGroupsVertices[1].vertices[0].y
