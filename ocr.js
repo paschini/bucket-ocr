@@ -1,7 +1,3 @@
-// credentials:
-// set GOOGLE_APPLICATION_CREDENTIALS=[PATH]
-// [path] to json key file obtained from google cloud service account
-
 const path = require('path');
 const vision = require('@google-cloud/vision');
 const { Storage } = require('@google-cloud/storage');
@@ -13,7 +9,6 @@ async function getVertices(data) {
   // Performs text detection on the gcs file
   const [result] = await client.textDetection(`gs://${data.bucket}/${data.name}`);
   const detections = result.textAnnotations;
-  // return detections[groupIndex].boundingPoly.vertices;
   return detections.filter(group => group.description.match(new RegExp('([0-9]{4})'))).map(groupVertices => ({
     vertices: groupVertices.boundingPoly.vertices
   }), []);
@@ -86,4 +81,6 @@ exports.maskImage = async function(event) {
   await deleteUnmasked(event.data);
 };
 
-// how to deploy: https://www.youtube.com/watch?v=rzHm2wu9_LM
+// uncomment next line and run "node ocr" on your terminal
+// drawMask({ name: 'testcc.jpg', bucket: 'elliestestbucket' }).then();
+
