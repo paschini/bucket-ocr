@@ -77,8 +77,9 @@ async function drawMask(data) {
 }
 
 exports.maskImage = async function(event) {
-  await drawMask(event.data);
-  await deleteUnmasked(event.data);
+  console.log(event);
+  // await drawMask(event.data);
+  // await deleteUnmasked(event.data);
 };
 
 // uncomment next line and run "node ocr" on your terminal

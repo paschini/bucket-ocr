@@ -23,5 +23,6 @@ The function is supposed to be deployed as a Google Cloud Function. To run it fr
 Once deployed to a Google Bucket, the function should run everytime a file is uploaded to the trigger bucket. Refer to the video below for more information.
 
 
-
+### Deploy command:
+`gcloud functions deploy automask --trigger-bucket elliestestbucket --stage-bucket deployed-functions --runtime nodejs10 --entry-point maskImage` <br />
 [How to deploy the function and listen to uploads into a bucket.](https://www.youtube.com/watch?v=rzHm2wu9_LM)
