@@ -1,3 +1,4 @@
+const os = require('os');
 const path = require('path');
 const vision = require('@google-cloud/vision');
 const { Storage } = require('@google-cloud/storage');
@@ -18,7 +19,8 @@ async function getImage(data) {
   const storage = new Storage();
 
 // Download file from bucket.
-  const tempLocalPath = `${__dirname}/tmp/${path.parse(data.name).base}`;
+  // `${__dirname}/tmp/${path.parse(data.name).base}`;
+  const tempLocalPath = `${os.tmpdir()}/${data.name}`;
   const file = storage.bucket(data.bucket).file(data.name);
   try {
     await file.download({destination: tempLocalPath});
@@ -31,7 +33,7 @@ async function getImage(data) {
 
 async function uploadImage(data) {
   const storage = new Storage();
-  const fileName = `${__dirname}/tmp/${data.name}`;
+  const fileName = `${os.tmpdir()}/masked_${data.name}`;
 
 // Upload file to bucket.
   await storage.bucket(data.bucket).upload(fileName, {destination: `masked_${data.name}`});
@@ -40,10 +42,15 @@ async function uploadImage(data) {
 async function deleteUnmasked(data) {
   const storage = new Storage();
   const originalFile = storage.bucket(data.bucket).file(data.name);
-  const tempFile = `${__dirname}/tmp/${path.parse(data.name).base}`;
+  const tempFile = `${os.tmpdir()}/masked_${data.name}`;
 
-  await storage.delete(originalFile);
-  await storage.delete(tempFile);
+  await originalFile.delete();
+
+  const fs = require('fs');
+  await fs.unlink(tempFile, (err) => {
+    if (err) throw err;
+    console.log(`deleted: ${tempFile}`);
+  });
 }
 
 async function drawMask(data) {
@@ -52,13 +59,23 @@ async function drawMask(data) {
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext('2d');
 
+  console.log(numberGroupsVertices);
+
   ctx.drawImage(image, 0, 0);
   ctx.fillStyle = "#000000";
-  ctx.fillRect( // masks all but the last 4 digits
-    numberGroupsVertices[1].vertices[0].x, numberGroupsVertices[1].vertices[0].y,
-    numberGroupsVertices[3].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
-    numberGroupsVertices[4].vertices[2].y - numberGroupsVertices[1].vertices[0].y
-  );
+
+  numberGroupsVertices.length < 5 ?
+    ctx.fillRect( // masks all but the last 4 digits
+      numberGroupsVertices[1].vertices[0].x, numberGroupsVertices[1].vertices[0].y,
+      numberGroupsVertices[2].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
+      numberGroupsVertices[3].vertices[2].y - numberGroupsVertices[1].vertices[0].y
+    )
+    :
+    ctx.fillRect( // masks all but the last 4 digits
+      numberGroupsVertices[1].vertices[0].x, numberGroupsVertices[1].vertices[0].y,
+      numberGroupsVertices[3].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
+      numberGroupsVertices[4].vertices[2].y - numberGroupsVertices[1].vertices[0].y
+    );
 
   // to mask all of the numbers:
   // ctx.fillRect(
@@ -68,7 +85,7 @@ async function drawMask(data) {
   // );
 
   const fs = require('fs');
-  const out = fs.createWriteStream(`${__dirname}/tmp/${data.name}`);
+  const out = fs.createWriteStream(`${os.tmpdir()}/masked_${data.name}`);
   const stream = canvas.createJPEGStream();
   stream.pipe(out);
   await out.on('finish', () => console.log('masked file saved.'));
@@ -76,10 +93,9 @@ async function drawMask(data) {
   await uploadImage(data);
 }
 
-exports.maskImage = async function(event) {
-  console.log(event);
-  // await drawMask(event.data);
-  // await deleteUnmasked(event.data);
+exports.maskImage = async function(data) {
+  await drawMask(data);
+  await deleteUnmasked(data);
 };
 
 // uncomment next line and run "node ocr" on your terminal
