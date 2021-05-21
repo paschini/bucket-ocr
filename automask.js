@@ -20,8 +20,8 @@ async function getVertices(data) {
   console.log('All text found:');
   detections.map(block => console.log(JSON.stringify(block)));
 
-  // aiming for groups of 3 digits instead of 4 relaxes the detection a bit and helps with some card pictures
-  return detections.filter(group => group.description.match(new RegExp('([0-9]{3})'))).map(groupVertices => ({
+  // aiming for groups of 2 digits instead of 4 relaxes the detection a bit and helps with some card pictures
+  return detections.filter(group => group.description.match(new RegExp('([0-9]{2})'))).map(groupVertices => ({
     vertices: groupVertices.boundingPoly.vertices
   }), []);
 }
@@ -115,5 +115,5 @@ exports.maskImage = async function(data) {
 };
 
 // uncomment next line and run "node automask" on your terminal
-// drawMask({ name: 'testcc3.jpg', bucket: 'elliestestbucket' }).then();
+// drawMask({ name: 'testcc4.jpg', bucket: 'elliestestbucket' }).then();
 

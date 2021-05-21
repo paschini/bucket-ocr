@@ -30,5 +30,12 @@ The console.logs are useful! When the function is deployed to a bucket, it is po
 ### Deploy command:
 `gcloud functions deploy automask --trigger-bucket elliestestbucket --stage-bucket deployed-functions --runtime nodejs14 --entry-point maskImage`
 
+### Far from production state!
+The quality of the detection depends on the quality of the image.
+As is, the function is not 100% reliable, because even though it will mask _something_ everytime, there is no guarantee that the image will be _properly_ masked. Given that the function starts masking from _left_ to _right_ and assumes and card is placed at least somewhat _horizontly_, when it cannot detect all groups of digits in the card, some unexpected masking may happen. It may, for example, mask only the first 4 digits, or place the mask awkwardly onto the numbers. I have included a couple sample fake cards taken from advertisements on the internet. They can be found in the `tmp` folder.
+
+From the samples included, you will notice that `test-visa-gold.png`, `testcc2.jpg` and `testcc3.jpg` are the ones that work more properly, receiving a good mask. As for `testcc4.jpg` which resembles best an image uploaded by a user, it will get masked, but some of the first few digits fall out of the mask. This can be solved by extending the mask a little bit. Card `testcc5.jpg` is the most problematic picture, in which the numbers cannot be detected in groups of 4. To solve that particular problem, I have changed the matching mask to look for groups of 2 digits at a time, which made the masking work.
+
+Of course some more tweaks can be made, and I believe it can be improved further by trying to detect the edges of card, not only the numbers, so that the mask could be placed parallel to the edges of the card.
 
 [How to deploy the function and listen to uploads into a bucket.](https://www.youtube.com/watch?v=rzHm2wu9_LM)
