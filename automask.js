@@ -112,5 +112,5 @@ exports.maskImage = async function(data) {
 };
 
 // uncomment next line and run "node automask" on your terminal
-drawMask({ name: 'testcc3.jpg', bucket: 'elliestestbucket' }).then();
+// drawMask({ name: 'testcc3.jpg', bucket: 'elliestestbucket' }).then();
 
