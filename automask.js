@@ -17,6 +17,7 @@ async function getVertices(data) {
   console.log('All text found:');
   detections.map(block => console.log(JSON.stringify(block)));
 
+  // aiming for groups of 3 digits instead of 4 relaxes the detection a bit and helps with some card pictures
   return detections.filter(group => group.description.match(new RegExp('([0-9]{3})'))).map(groupVertices => ({
     vertices: groupVertices.boundingPoly.vertices
   }), []);
@@ -70,7 +71,8 @@ async function drawMask(data) {
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext('2d');
 
-  console.log(`Found ${numberGroupsVertices} groups`);
+  console.log(`Found ${numberGroupsVertices.length} groups`);
+  numberGroupsVertices.map(vertices => console.log(JSON.stringify(vertices)));
 
   ctx.drawImage(image, 0, 0);
   ctx.fillStyle = "#000000";

@@ -16,13 +16,19 @@ You also need to export an environmental variable with the path to the key file.
 `export GOOGLE_APPLICATION_CREDENTIALS=[PATH]` (mac) <br />
 `set GOOGLE_APPLICATION_CREDENTIALS=[PATH]`(windows) <br />
 
+### Before Deploying / Enabling trigger
 The tmp folder (which is empty after cloning) does not need to contain any files. As long as you have a file in your bucket, it will work. The folder is used for editing the new image prior to uploading. Edit the name (for the file name to look for) and the bucket (for the bucket name in your project).
-
-The function is supposed to be deployed as a Google Cloud Function. To run it from the terminal, uncomment the line marked in the end of the file. Add some test image files to the tmp folder. Uncomment the code to use the lcoal file, instead of downloading from the bucket. 
 
 Once deployed to a Google Bucket, the function should run everytime a file is uploaded to the trigger bucket. Refer to the video below for more information.
 
+### After Deploying / Enabling trigger
+The function is supposed to be deployed as a Google Cloud Function. After you enable a trigger on the bucket, you will need to change the code to use local files if you wish to test locally. To run it from the terminal, uncomment the line marked in the end of the file. Add some test image files to the tmp folder. Uncomment the code to use the local image files, instead of downloading from the bucket.
+
+### Yes, there is a bunch of console.log lines...
+The console.logs are useful! When the function is deployed to a bucket, it is possible to look at the logs from the Google Cloud Console -> Operations -> Logging.
 
 ### Deploy command:
-`gcloud functions deploy automask --trigger-bucket elliestestbucket --stage-bucket deployed-functions --runtime nodejs14 --entry-point maskImage` <br />
+`gcloud functions deploy automask --trigger-bucket elliestestbucket --stage-bucket deployed-functions --runtime nodejs14 --entry-point maskImage`
+
+
 [How to deploy the function and listen to uploads into a bucket.](https://www.youtube.com/watch?v=rzHm2wu9_LM)
