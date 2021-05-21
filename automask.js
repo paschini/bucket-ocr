@@ -81,7 +81,7 @@ async function drawMask(data) {
     ctx.fillRect( // masks all but the last 4 digits
       numberGroupsVertices[1].vertices[0].x, numberGroupsVertices[1].vertices[0].y,
       numberGroupsVertices[2].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
-      numberGroupsVertices[3].vertices[2].y - numberGroupsVertices[1].vertices[0].y
+      numberGroupsVertices[2].vertices[2].y - numberGroupsVertices[1].vertices[0].y
     )
     :
     ctx.fillRect( // masks all but the last 4 digits
