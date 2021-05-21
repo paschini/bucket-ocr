@@ -6,7 +6,7 @@ const { loadImage, createCanvas } = require('canvas');
 
 async function getVertices(data) {
   // do not re-mask files
-  if (data.name.contains("masked")) { return; }
+  if (data.name.includes("masked")) { return; }
 
   const client = new vision.ImageAnnotatorClient();
 
