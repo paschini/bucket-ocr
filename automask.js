@@ -5,6 +5,9 @@ const { Storage } = require('@google-cloud/storage');
 const { loadImage, createCanvas } = require('canvas');
 
 async function getVertices(data) {
+  // do not re-mask files
+  if (data.name.contains("masked")) { return; }
+
   const client = new vision.ImageAnnotatorClient();
 
   // Performs text detection on the gcs file
@@ -80,8 +83,8 @@ async function drawMask(data) {
   numberGroupsVertices.length < 5 ?
     ctx.fillRect( // masks all but the last 4 digits
       numberGroupsVertices[0].vertices[0].x, numberGroupsVertices[1].vertices[0].y,
-      numberGroupsVertices[2].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
-      numberGroupsVertices[2].vertices[2].y - numberGroupsVertices[1].vertices[0].y
+      numberGroupsVertices[1].vertices[1].x - numberGroupsVertices[1].vertices[0].x,
+      numberGroupsVertices[1].vertices[2].y - numberGroupsVertices[1].vertices[0].y
     )
     :
     ctx.fillRect( // masks all but the last 4 digits
